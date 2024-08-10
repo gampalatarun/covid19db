@@ -5,7 +5,7 @@ const {open} = require('sqlite')
 const sqlite3 = require('sqlite3')
 const path = require('path')
 const dbpath = path.join(__dirname, 'covid19India.db')
-
+app.use(express.json())
 module.exports = app
 
 let db = null
@@ -53,11 +53,11 @@ app.get('/states/', async (request, response) => {
   const getstatesQuery = `select * from state ORDER BY state_id;`
 
   const statesArray = await db.all(getstatesQuery)
-  const convertedStateDetails = statesArray.map(eachstate =>
-    convertsnaketoCamelCaseStateDetails(eachstate),
+  response.send(
+    statesArray.map(eachstate =>
+      convertsnaketoCamelCaseStateDetails(eachstate),
+    ),
   )
-
-  response.send(convertedStateDetails)
 })
 
 //API2
@@ -74,7 +74,83 @@ app.get('/states/:stateId/', async (request, response) => {
 
 app.post('/districts/', async (request, response) => {
   const {districtName, stateId, cases, cured, active, deaths} = request.body
-  const postDistrictQuery = ` INSERT INTO director(district_name,state_id,cases,cured,active,deaths) VALUES('${districtName}',${stateId},${cases},${cured},${active},${deaths})`
+  const postDistrictQuery = ` INSERT INTO district(district_name,state_id,cases,cured,active,deaths)
+   VALUES('${districtName}',${stateId},${cases},${cured},${active},${deaths});`
   await db.run(postDistrictQuery)
-  response.send('District Successfully')
+  response.send('District Successfully Added')
+})
+
+//API4
+
+app.get('/districts/:districtId/', async (request, response) => {
+  const {districtId} = request.params
+  const getdistrictQuery = `SELECT * FROM district WHERE district_id=${districtId};`
+  const getdistrictDetails = await db.get(getdistrictQuery)
+
+  response.send(convertsnaketoCamleCaseDistrictDetails(getdistrictDetails))
+})
+
+//API5
+
+app.delete('/districts/:districtId/', async (request, response) => {
+  const {districtId} = request.params
+  const deleteQuery = ` DELETE FROM district WHERE district_id=${districtId};`
+  await db.run(deleteQuery)
+  response.send('District Removed')
+})
+
+//API6
+
+app.put('/districts/:districtId/', async (request, response) => {
+  const {districtId} = request.params
+  const {districtName, stateId, cases, cured, active, deaths} = request.body
+  const updateQuery = `UPDATE district SET 
+  district_name:'${districtName}',
+  state_id:${stateId},
+  cases:${cases},
+  cured:${cured},
+  active:${active},
+  deaths:${deaths}
+  WHERE district_id=${districtId};
+
+  `
+  await db.run(updateQuery)
+
+  response.send('District Details Updated')
+})
+
+//API7
+
+app.get('/states/:stateId/stats/', async (request, response) => {
+  const {stateId} = request.params
+  const getStatsQuery = ` 
+  SELECT 
+  SUM(cases),
+  SUM(cured),
+  SUM(active),
+  SUM(deaths)
+  FROM district 
+  WHERE state_id=${stateId};
+
+  `
+  const sumStats = await db.get(getStatsQuery)
+
+  response.send({
+    totalCases: sumStats['SUM(cases)'],
+    totalCured: sumStats['SUM(cured)'],
+    totalActive: sumStats['SUM(active)'],
+    totalDeaths: sumStats['SUM(deaths)'],
+  })
+})
+
+//API8
+
+app.get('/districts/:districtId/details/', async (request, response) => {
+  const {districtId} = request.params
+  const getstateQuery = `SELECT state_id FROM district WHERE district_id=${districtId};`
+  const getstateId = await db.get(getstateQuery)
+
+  const getstatenameQuery = `SELECT state_name as stateName FROM state WHERE state_id=${getstateId.state_id};`
+  const statenameDetails = await db.get(getstatenameQuery)
+  response.send(statenameDetails)
 })
