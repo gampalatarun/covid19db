@@ -86,7 +86,7 @@ app.post('/districts/', async (request, response) => {
 
 app.get('/districts/:districtId/', async (request, response) => {
   const {districtId} = request.params
-  const getdistrictQuery = `select * FROM district WHERE district_id=${districtId};`
+  const getdistrictQuery = `SELECT * FROM district WHERE district_id=${districtId};`
   const getdistrictDetails = await db.get(getdistrictQuery)
 
   response.send(convertsnaketoCamleCaseDistrictDetails(getdistrictDetails))
@@ -153,7 +153,8 @@ app.get('/districts/:districtId/details/', async (request, response) => {
   const getstateQuery = `SELECT state_id FROM district WHERE district_id=${districtId}`
   const getstateId = await db.get(getstateQuery)
 
-  const getstatenameQuery = `SELECT state_name AS stateName FROM state WHERE state_id=${getstateId.stateId}`
+  const getstatenameQuery = `SELECT state_name AS stateName FROM state WHERE state_id=${getstateId.state_id};`
   const statenameDetails = await db.get(getstatenameQuery)
+  console.log(statenameDetails)
   response.send(statenameDetails)
 })
