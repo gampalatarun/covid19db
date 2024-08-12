@@ -5,8 +5,9 @@ const {open} = require('sqlite')
 const sqlite3 = require('sqlite3')
 const path = require('path')
 const dbpath = path.join(__dirname, 'covid19India.db')
-app.use(express.json())
+
 module.exports = app
+app.use(express.json())
 
 let db = null
 
@@ -50,7 +51,7 @@ const convertsnaketoCamleCaseDistrictDetails = db => {
 //API1
 
 app.get('/states/', async (request, response) => {
-  const getstatesQuery = `select * from state ORDER BY state_id;`
+  const getstatesQuery = `select * FROM state;`
 
   const statesArray = await db.all(getstatesQuery)
   response.send(
@@ -74,7 +75,8 @@ app.get('/states/:stateId/', async (request, response) => {
 
 app.post('/districts/', async (request, response) => {
   const {districtName, stateId, cases, cured, active, deaths} = request.body
-  const postDistrictQuery = ` INSERT INTO district(district_name,state_id,cases,cured,active,deaths)
+  const postDistrictQuery = `
+  INSERT INTO district(district_name,state_id,cases,cured,active,deaths)
    VALUES('${districtName}',${stateId},${cases},${cured},${active},${deaths});`
   await db.run(postDistrictQuery)
   response.send('District Successfully Added')
@@ -84,7 +86,7 @@ app.post('/districts/', async (request, response) => {
 
 app.get('/districts/:districtId/', async (request, response) => {
   const {districtId} = request.params
-  const getdistrictQuery = `SELECT * FROM district WHERE district_id=${districtId};`
+  const getdistrictQuery = `select * FROM district WHERE district_id=${districtId};`
   const getdistrictDetails = await db.get(getdistrictQuery)
 
   response.send(convertsnaketoCamleCaseDistrictDetails(getdistrictDetails))
@@ -95,7 +97,7 @@ app.get('/districts/:districtId/', async (request, response) => {
 app.delete('/districts/:districtId/', async (request, response) => {
   const {districtId} = request.params
   const deleteQuery = ` DELETE FROM district WHERE district_id=${districtId};`
-  await db.run(deleteQuery)
+  const getdelete = await db.run(deleteQuery)
   response.send('District Removed')
 })
 
@@ -105,12 +107,12 @@ app.put('/districts/:districtId/', async (request, response) => {
   const {districtId} = request.params
   const {districtName, stateId, cases, cured, active, deaths} = request.body
   const updateQuery = `UPDATE district SET 
-  district_name:'${districtName}',
-  state_id:${stateId},
-  cases:${cases},
-  cured:${cured},
-  active:${active},
-  deaths:${deaths}
+  district_name='${districtName}',
+  state_id=${stateId},
+  cases=${cases},
+  cured=${cured},
+  active=${active},
+  deaths=${deaths}
   WHERE district_id=${districtId};
 
   `
@@ -124,6 +126,7 @@ app.put('/districts/:districtId/', async (request, response) => {
 app.get('/states/:stateId/stats/', async (request, response) => {
   const {stateId} = request.params
   const getStatsQuery = ` 
+  
   SELECT 
   SUM(cases),
   SUM(cured),
@@ -134,7 +137,7 @@ app.get('/states/:stateId/stats/', async (request, response) => {
 
   `
   const sumStats = await db.get(getStatsQuery)
-
+  console.log(sumStats)
   response.send({
     totalCases: sumStats['SUM(cases)'],
     totalCured: sumStats['SUM(cured)'],
@@ -147,10 +150,10 @@ app.get('/states/:stateId/stats/', async (request, response) => {
 
 app.get('/districts/:districtId/details/', async (request, response) => {
   const {districtId} = request.params
-  const getstateQuery = `SELECT state_id FROM district WHERE district_id=${districtId};`
+  const getstateQuery = `SELECT state_id FROM district WHERE district_id=${districtId}`
   const getstateId = await db.get(getstateQuery)
 
-  const getstatenameQuery = `SELECT state_name as stateName FROM state WHERE state_id=${getstateId.state_id};`
+  const getstatenameQuery = `SELECT state_name AS stateName FROM state WHERE state_id=${getstateId.stateId}`
   const statenameDetails = await db.get(getstatenameQuery)
   response.send(statenameDetails)
 })
