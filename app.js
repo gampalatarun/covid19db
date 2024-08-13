@@ -39,6 +39,7 @@ const convertsnaketoCamelCaseStateDetails = db => {
 
 const convertsnaketoCamleCaseDistrictDetails = db => {
   return {
+    districtId: db.district_id,
     districtName: db.district_name,
     stateId: db.state_id,
     cases: db.cases,
